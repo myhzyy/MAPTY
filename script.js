@@ -114,9 +114,7 @@ class App {
     const validInputs = (...inputs) =>
       inputs.every((inp) => Number.isFinite(inp));
 
-    /// This will loop over the array of inputs. '...' makes it an array
-    /// and then will check if each interation (named inp) is finite or not
-    /// every will only return true if all of them are true
+    const allPositive = (...inputs) => inputs.every((inp) => inp > 0);
 
     e.preventDefault();
 
@@ -135,7 +133,8 @@ class App {
         // !Number.isFinite(distance) ||
         // !Number.isFinite(duration) ||
         // !Number.isFinite(cadence)
-        !validInputs(distance, duration, cadence)
+        !validInputs(distance, duration, cadence) ||
+        !allPositive(distance, duration, cadence)
       )
         return alert("Inputs have to be positive numbers!");
     }
@@ -144,7 +143,10 @@ class App {
     if (type === "cycling") {
       const elevation = +elevationGain.value;
 
-      if (!validInputs(distance, duration, elevation))
+      if (
+        !validInputs(distance, duration, elevation) ||
+        !allPositive(distance, duration)
+      )
         return alert("Inputs have to be positive numbers!");
     }
 
