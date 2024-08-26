@@ -4,7 +4,8 @@
 
 class Workout {
   date = new Date();
-  id = (new Date() + "").slice(-10);
+  id = (Date.now() + "").slice(-10);
+  clicks = 0;
 
   /// the id is generated from the last 10 numbers of the date
 
@@ -34,16 +35,11 @@ class Workout {
       months[this.date.getMonth()]
     } ${this.date.getDate()}`;
   }
+
+  click() {
+    this.clicks++;
+  }
 }
-
-/// _setDescription is holding all the months
-
-/// we then make a new function called description,
-/// this will take the type of whichever is caleld (cycling or running)
-/// take the first character and make it captial.
-/// next it will take the type and slice the first letter away,
-/// keeping us with a capital version, and then the first letter missing
-///
 
 class Running extends Workout {
   type = "running";
@@ -90,6 +86,7 @@ const inputElevation = document.querySelector(".form__input--elevation");
 
 class App {
   #map;
+  #mapZoomLevel = 13;
   #mapEvent;
   #workouts = [];
 
@@ -98,11 +95,8 @@ class App {
 
     form.addEventListener("submit", this._newWorkout.bind(this));
 
-    /// CHANGING THE FORM
-
-    /// form input stype
-
     inputType.addEventListener("change", this._toggleElevationField);
+    containerWorkouts.addEventListener("click", this._moveToPopup.bind(this));
   }
 
   _getPosition() {
@@ -122,7 +116,7 @@ class App {
 
     const coords = [latitude, longitude];
 
-    this.#map = L.map("map").setView(coords, 13);
+    this.#map = L.map("map").setView(coords, this.#mapZoomLevel);
 
     L.tileLayer("https://tile.openstreetmap.fr/hot//{z}/{x}/{y}.png", {
       attribution:
@@ -137,6 +131,20 @@ class App {
     this.#mapEvent = mapE;
     form.classList.remove("hidden");
     inputDistance.focus();
+  }
+
+  _hideForm() {
+    /// empty inputs
+    inputDistance.value =
+      inputDuration.value =
+      inputCadence.value =
+      inputElevation.value =
+        "";
+
+    form.style.display = "none";
+
+    form.classList.add("hidden");
+    setTimeout(() => (form.style.display = "grid"), 1000);
   }
 
   _toggleElevationField() {
@@ -204,11 +212,10 @@ class App {
     // hide form + clear input fields
 
     // Clear input fields
-    inputDistance.value =
-      inputDuration.value =
-      inputCadence.value =
-      inputElevation.value =
-        "";
+    this._hideForm();
+
+    /// set local storage to all workouts
+    this._setLocalStorage();
   }
 
   _renderWorkoutMarker(workout) {
@@ -223,14 +230,16 @@ class App {
           className: `${workout.type}-popup`,
         })
       )
-      .setPopupContent("workout")
+      .setPopupContent(
+        `${workout.type === "running" ? "🏃" : "🚲"} ${workout.Description}`
+      )
       .openPopup();
   }
 
   _renderWorkout(workout) {
     let html = `
 
-    <li class="workout workout--${workout.className}" data-id="${workout.id}">
+    <li class="workout workout--${workout.type}" data-id="${workout.id}">
           <h2 class="workout__title">${workout.Description}</h2>
           <div class="workout__details">
             <span class="workout__icon">${
@@ -277,6 +286,31 @@ class App {
         </li> -->`;
 
     form.insertAdjacentHTML("afterend", html);
+  }
+  _moveToPopup(e) {
+    const workoutEl = e.target.closest(".workout");
+    console.log(workoutEl);
+
+    if (!workoutEl) return;
+
+    const workout = this.#workouts.find(
+      (work) => work.id === workoutEl.dataset.id
+    );
+    console.log(workout);
+
+    this.#map.setView(workout.coords, this.#mapZoomLevel, {
+      animate: true,
+      pan: {
+        duration: 1,
+      },
+    });
+
+    // using the public interface
+    workout.click();
+  }
+
+  _setLocalStorage() {
+    localStorage.setItem("workouts", JSON.stringify(this.#workouts));
   }
 }
 
