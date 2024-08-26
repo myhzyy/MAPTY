@@ -313,5 +313,4 @@ class App {
     localStorage.setItem("workouts", JSON.stringify(this.#workouts));
   }
 }
-
 const app = new App();
